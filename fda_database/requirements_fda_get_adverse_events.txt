@@ -1,0 +1,25 @@
+# FDA Get Adverse Events Dependencies
+
+# Core HTTP library
+requests>=2.31.0
+
+# Data processing
+pandas>=2.0.0  # For aggregating and analyzing adverse event data
+
+# Date handling
+python-dateutil>=2.8.2
+
+# Statistical analysis (optional, for signal detection)
+scipy>=1.10.0
+numpy>=1.24.0
+
+# Async support for batch queries
+aiohttp>=3.9.0
+
+# Installation:
+# pip install requests pandas python-dateutil scipy numpy aiohttp
+
+# System requirements:
+# - Python >= 3.8
+# - Internet connection
+# - Memory: 100MB+ for large queries (limit=1000)

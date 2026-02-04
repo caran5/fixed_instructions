@@ -1,0 +1,30 @@
+# DeepChem Featurize Molecules Dependencies
+
+# Core library
+deepchem>=2.7.0
+
+# Chemistry toolkit (required for all molecular featurizers)
+rdkit>=2022.03.1
+
+# Numerical computing
+numpy>=1.21.0
+scipy>=1.7.0
+
+# For graph featurizers
+networkx>=2.6.0
+
+# For parallel processing
+joblib>=1.1.0
+
+# Installation:
+# conda install -c conda-forge rdkit
+# pip install deepchem numpy scipy networkx joblib
+
+# Alternative RDKit installation:
+# pip install rdkit  # May not work on all platforms; conda recommended
+
+# System requirements:
+# - Python >= 3.7, < 3.11 (DeepChem compatibility)
+# - RAM: 4GB minimum, 16GB+ recommended for large datasets
+# - CPU: Multi-core beneficial for n_jobs parameter
+# - No GPU required

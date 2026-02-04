@@ -1,0 +1,50 @@
+# DeepChem Train Graph Model Dependencies
+
+# Core library with TensorFlow backend
+deepchem>=2.7.0
+
+# Deep learning framework
+tensorflow>=2.11.0,<2.16.0  # DeepChem compatibility range
+# OR for Apple Silicon optimized:
+# tensorflow-macos>=2.11.0  # For M1/M2 Macs
+
+# GPU support (optional but recommended)
+# tensorflow-gpu>=2.11.0  # Deprecated; use tensorflow with CUDA
+# CUDA Toolkit >= 11.2
+# cuDNN >= 8.1
+
+# Chemistry
+rdkit>=2022.03.1
+
+# Numerical computing
+numpy>=1.21.0,<1.24.0  # TensorFlow compatibility
+scipy>=1.7.0
+
+# Graph handling
+networkx>=2.6.0
+
+# Progress tracking (optional)
+tqdm>=4.62.0
+
+# Model checkpointing
+h5py>=3.7.0
+
+# Installation instructions:
+# For CPU-only:
+#   conda install -c conda-forge rdkit
+#   pip install deepchem tensorflow numpy scipy networkx tqdm h5py
+
+# For GPU (NVIDIA):
+#   conda install -c conda-forge rdkit
+#   pip install deepchem tensorflow[and-cuda] numpy scipy networkx tqdm h5py
+#   Ensure CUDA Toolkit and cuDNN are installed
+
+# For Apple Silicon (M1/M2):
+#   conda install -c conda-forge rdkit
+#   pip install deepchem tensorflow-macos tensorflow-metal numpy scipy networkx tqdm h5py
+
+# System requirements:
+# - Python >= 3.7, < 3.11
+# - RAM: 8GB minimum, 16GB+ recommended
+# - GPU: NVIDIA with CUDA support (optional, 4GB+ VRAM)
+# - Disk: 5GB+ for model checkpoints and datasets

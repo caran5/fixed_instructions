@@ -1,0 +1,53 @@
+# TorchDrug Create GNN Model Dependencies
+
+# Core library
+torchdrug>=0.2.0
+
+# PyTorch (primary deep learning backend)
+torch>=1.10.0
+
+# For 3D models (SchNet, DimeNet)
+torch-scatter>=2.0.9
+torch-sparse>=0.6.12
+torch-geometric>=2.0.3  # Optional, for additional layers
+
+# Molecular processing
+rdkit>=2022.03.1
+
+# Numerical computing
+numpy>=1.21.0
+
+# Graph operations
+networkx>=2.6.0
+
+# Model serialization
+pyyaml>=5.4.0
+
+# Installation instructions:
+
+# Standard installation (2D GNNs: GCN, GIN, GAT):
+#   conda install -c conda-forge rdkit
+#   pip install torchdrug torch networkx numpy pyyaml
+
+# For 3D GNNs (SchNet, DimeNet) - requires geometric extensions:
+#   conda install -c conda-forge rdkit
+#   pip install torch torchdrug networkx numpy pyyaml
+#   pip install torch-scatter torch-sparse -f https://data.pyg.org/whl/torch-{torch_version}+{cuda_version}.html
+#   Example for PyTorch 2.0 + CUDA 11.8:
+#     pip install torch-scatter torch-sparse -f https://data.pyg.org/whl/torch-2.0.0+cu118.html
+
+# PyTorch installation (choose based on GPU):
+# CPU-only:
+#   pip install torch --index-url https://download.pytorch.org/whl/cpu
+# CUDA 11.8:
+#   pip install torch --index-url https://download.pytorch.org/whl/cu118
+# CUDA 12.1:
+#   pip install torch --index-url https://download.pytorch.org/whl/cu121
+# ROCm 5.4 (AMD GPUs):
+#   pip install torch --index-url https://download.pytorch.org/whl/rocm5.4.2
+
+# System requirements:
+# - Python >= 3.7, < 3.12
+# - RAM: 8GB minimum, 16GB+ recommended
+# - GPU (optional but recommended): NVIDIA with CUDA 11+, 4GB+ VRAM
+# - For 3D models: GPU strongly recommended (10-50x faster)

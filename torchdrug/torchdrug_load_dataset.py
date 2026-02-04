@@ -1,0 +1,160 @@
+"""
+TorchDrug - Load Molecular Dataset Tool Description
+"""
+
+tool_description = {
+    "name": "torchdrug_load_dataset",
+    "description": (
+        "Load standard molecular property prediction datasets from TorchDrug including MoleculeNet benchmarks. "
+        "Automatically downloads, processes, and returns train/validation/test splits with molecular graphs. "
+        "Supports 15+ datasets (BBBP, Tox21, ESOL, HIV, BACE, etc.) with standardized splits for reproducible benchmarking. "
+        "Best choice for PyTorch-based workflows; integrates seamlessly with TorchDrug models. "
+        "Preferred over manual data loading for consistent preprocessing and fair model comparison."
+    ),
+    "required_parameters": [
+        {
+            "name": "dataset_name",
+            "type": "str",
+            "default": None,
+            "description": (
+                "Name of the dataset to load. Options include: "
+                "'BBBP' (blood-brain barrier penetration), 'Tox21' (toxicity), 'ToxCast', 'SIDER', "
+                "'ClinTox', 'ESOL' (solubility), 'FreeSolv', 'Lipophilicity', 'PCBA', 'MUV', 'HIV', "
+                "'BACE' (beta-secretase), 'QM9' (quantum properties), 'ZINC250k' (molecule generation). "
+                "Case-sensitive. Must match TorchDrug dataset registry."
+            ),
+        },
+    ],
+    "optional_parameters": [
+        {
+            "name": "path",
+            "type": "str",
+            "default": "~/molecule-datasets/",
+            "description": (
+                "Directory path for downloading and caching datasets. "
+                "First run downloads to this location; subsequent runs load from cache. "
+                "Disk usage: 10MB-5GB depending on dataset size. "
+                "Expandable paths like ~ are supported."
+            ),
+        },
+        {
+            "name": "node_feature",
+            "type": "str",
+            "default": "default",
+            "description": (
+                "Type of node (atom) features to use. Options: "
+                "'default' (atom type, charge, chirality), 'pretrain' (learned features), "
+                "'one_hot' (one-hot encoding of atom types). "
+                "Default provides good balance; pretrain improves performance with transfer learning."
+            ),
+        },
+        {
+            "name": "edge_feature",
+            "type": "str",
+            "default": "default",
+            "description": (
+                "Type of edge (bond) features. Options: "
+                "'default' (bond type, stereo, ring), 'pretrain', 'none'. "
+                "Including edge features improves performance but increases computation by ~30%. "
+                "'none' can speed up training for simple models."
+            ),
+        },
+        {
+            "name": "verbose",
+            "type": "int",
+            "default": 1,
+            "description": (
+                "Verbosity level for download and processing messages. "
+                "0: silent, 1: progress bars, 2: detailed logs. "
+                "Set to 0 in production pipelines to reduce log noise."
+            ),
+        },
+    ],
+    "hardware_requirements": {
+        "device": "cpu_only",
+        "notes": (
+            "Dataset loading is CPU-only operation. "
+            "Disk I/O intensive during first download. "
+            "Memory usage during loading: 500MB-2GB depending on dataset size. "
+            "After loading, memory scales with dataset size: ~1KB per molecule. "
+            "SSD recommended for large datasets (>100K molecules) to reduce loading time. "
+            "Network connection required for first download (10-500MB download size)."
+        ),
+    },
+    "time_complexity": {
+        "assumptions": (
+            "Wall-clock latency on Apple M1 with SSD and 100 Mbps internet. "
+            "First run includes download time (varies by connection). "
+            "Cached runs only include disk I/O and parsing. "
+            "Times for common datasets with scaffold split (default). "
+            "Random split is ~20% faster than scaffold split."
+        ),
+        "latency_seconds": {
+            "BBBP_first_run": 12.0,     # ~2K molecules, including download
+            "BBBP_cached": 1.5,          # From local cache
+            "Tox21_first_run": 25.0,     # ~8K molecules, 12 tasks
+            "Tox21_cached": 3.0,
+            "HIV_first_run": 90.0,       # ~41K molecules
+            "HIV_cached": 8.0,
+            "PCBA_first_run": 1800.0,    # ~440K molecules, large download
+            "PCBA_cached": 45.0,
+        },
+    },
+    "outputs": {
+        "type": "tuple",
+        "schema": {
+            "dataset_object": "torchdrug.datasets object",
+            "splits": {
+                "train": "torch.utils.data.Subset",
+                "valid": "torch.utils.data.Subset",
+                "test": "torch.utils.data.Subset",
+            },
+            "properties": [
+                "num_samples",
+                "tasks",
+                "node_feature_dim",
+                "edge_feature_dim",
+                "num_classes",
+            ],
+        },
+        "example": {
+            "dataset_name": "BBBP",
+            "dataset.num_samples": 2039,
+            "dataset.tasks": ["p_np"],
+            "dataset.node_feature_dim": 66,
+            "dataset.edge_feature_dim": 13,
+            "splits": {
+                "train": "1631 molecules",
+                "valid": "204 molecules",
+                "test": "204 molecules",
+            },
+        },
+    },
+    "failure_modes": [
+        {
+            "error": "Dataset not found",
+            "cause": "Invalid dataset_name or typo in name",
+            "fix": "Check spelling (case-sensitive), use datasets.SUPPORTED_DATASETS to list available datasets",
+        },
+        {
+            "error": "Download failed / Connection timeout",
+            "cause": "Network connection issue or external server unavailable",
+            "fix": "Check internet connection, retry with longer timeout, or manually download and place in path",
+        },
+        {
+            "error": "Disk space error",
+            "cause": "Insufficient disk space for dataset download and extraction",
+            "fix": "Free up disk space (need 2-10GB for large datasets), or change path to larger volume",
+        },
+        {
+            "error": "Corrupted cache",
+            "cause": "Interrupted download or disk corruption in cached files",
+            "fix": "Delete dataset directory and re-download: rm -rf ~/molecule-datasets/DATASET_NAME",
+        },
+        {
+            "error": "Memory error during loading",
+            "cause": "Dataset too large for available RAM (rare, usually only with PCBA or QM9)",
+            "fix": "Close other applications, use data loader with smaller batch sizes, or increase system RAM",
+        },
+    ],
+}
