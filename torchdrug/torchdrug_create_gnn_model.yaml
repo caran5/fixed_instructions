@@ -1,0 +1,166 @@
+name: torchdrug_create_gnn_model
+
+description: >
+  Create and configure a Graph Neural Network model for molecular property prediction in TorchDrug.
+  Supports multiple GNN architectures: GCN, GIN, GAT, MPNN, SchNet (3D), DimeNet (3D).
+  State-of-the-art performance on MoleculeNet; GIN and GAT typically outperform traditional methods.
+  Choose architecture based on task: GCN for speed, GIN for accuracy, GAT for interpretability,
+  SchNet/DimeNet for quantum properties requiring 3D structure. Best for PyTorch-based workflows.
+
+required_parameters:
+  - name: model_type
+    type: str
+    default: null
+    description: >
+      GNN architecture to use. Options:
+      'GCN' (Graph Convolutional Network - fast, good baseline),
+      'GIN' (Graph Isomorphism Network - highest accuracy on most tasks),
+      'GAT' (Graph Attention Network - interpretable attention weights),
+      'MPNN' (Message Passing Neural Network - flexible, bond features),
+      'SchNet' (for 3D structures, quantum properties),
+      'DimeNet' (directional message passing, 3D with angles).
+      Case-sensitive. Must match TorchDrug model registry.
+
+  - name: input_dim
+    type: int
+    default: null
+    description: >
+      Dimension of input node features (atom features).
+      Must match dataset.node_feature_dim.
+      Typical values: 66 for default TorchDrug features, 9 for minimal atom types.
+      Get from dataset: dataset.node_feature_dim. Critical to match exactly.
+
+  - name: hidden_dims
+    type: list[int]
+    default: null
+    description: >
+      List of hidden layer dimensions. Length determines number of GNN layers.
+      Example: [256, 256, 256] = 3 layers of 256 units each.
+      Typical values: 128-512 per layer, 2-6 layers.
+      Deeper/wider improves capacity but risks overfitting on small data (<5K molecules).
+
+optional_parameters:
+  - name: edge_input_dim
+    type: int
+    default: null
+    description: >
+      Dimension of edge features (bond features).
+      Set to dataset.edge_feature_dim if using edge features.
+      If null, model ignores edge features (faster but less accurate).
+      Typical: 13 for default TorchDrug bond features. Only for MPNN, GAT.
+
+  - name: num_relation
+    type: int
+    default: null
+    description: >
+      Number of edge types (relation types) in molecular graphs.
+      Typical: 7 for protein graphs (different interaction types),
+      4 for molecules (single, double, triple, aromatic bonds).
+      Only applicable for relational GNNs (certain MPNN variants).
+      If null, treats all edges as same type.
+
+  - name: batch_norm
+    type: bool
+    default: true
+    description: >
+      Apply batch normalization after each GNN layer.
+      Recommended: true for all cases (stabilizes training, improves performance).
+      Adds minimal computation overhead (~5%).
+      Particularly important for deep networks (>4 layers).
+
+  - name: short_cut
+    type: bool
+    default: true
+    description: >
+      Add residual connections (skip connections) between layers.
+      Recommended: true for deep networks (>3 layers).
+      Improves gradient flow and enables training of deeper models.
+      Minimal performance overhead. Similar to ResNet in computer vision.
+
+  - name: concat_hidden
+    type: bool
+    default: false
+    description: >
+      Concatenate all hidden layer outputs for final prediction.
+      true: richer representation but higher memory and computation.
+      false: use only final layer (standard approach).
+      Set true for tasks requiring fine-grained structural information.
+
+  - name: readout
+    type: str
+    default: sum
+    description: >
+      Graph-level pooling method to aggregate node features. Options:
+      'sum' (sum pooling - most common, permutation invariant),
+      'mean' (average pooling - normalized by graph size),
+      'max' (max pooling - focuses on important atoms).
+      Choice affects performance; sum typically works best for molecules.
+
+hardware_requirements:
+  device: gpu_optional
+  notes: >
+    Model creation is CPU-only and instantaneous (<1 second).
+    GPU recommended for training: 2-100x speedup depending on model size.
+    GPU memory requirements for training:
+      Small model (2 layers, 128 hidden): 2GB VRAM
+      Medium model (3 layers, 256 hidden): 4-6GB VRAM
+      Large model (5 layers, 512 hidden): 8-12GB VRAM
+    CPU inference: feasible for small batches (<32 molecules).
+    Compatible GPUs: NVIDIA with CUDA (RTX, Tesla, A100), AMD with ROCm.
+
+time_complexity:
+  assumptions: >
+    Model creation time is negligible (<0.1s on any hardware).
+    Times below are for inference (forward pass) on representative molecules.
+    Batch size: 32 molecules, average 30 atoms per molecule.
+    CPU: Apple M1. GPU: NVIDIA RTX 3080.
+    Training time: multiply by 3-4x (includes backpropagation).
+    Scales linearly with batch size and number of atoms.
+  latency_seconds:
+    creation: 0.05
+    inference_1_cpu: 0.15
+    inference_32_cpu: 2.5
+    inference_1_gpu: 0.003
+    inference_32_gpu: 0.02
+    inference_1000_gpu: 0.4
+
+outputs:
+  type: torch.nn.Module
+  schema:
+    model_class: torchdrug.models GNN variant
+    methods:
+      - forward()
+      - predict()
+      - evaluate()
+    attributes:
+      - input_dim
+      - hidden_dims
+      - output_dim
+      - num_layers
+  example:
+    model_type: GIN
+    architecture: "GIN(input_dim=66, hidden_dims=[256,256,256], batch_norm=True)"
+    parameters: "~500K trainable parameters"
+    forward_input: batch of molecular graphs
+    forward_output: "torch.Tensor of shape (batch_size, hidden_dims[-1])"
+
+failure_modes:
+  - error: Input dimension mismatch
+    cause: model.input_dim doesn't match dataset.node_feature_dim
+    fix: Set input_dim=dataset.node_feature_dim when creating model
+
+  - error: Model type not found
+    cause: Invalid model_type string or TorchDrug version incompatibility
+    fix: Check spelling (case-sensitive), verify TorchDrug version, use models.SUPPORTED_MODELS
+
+  - error: CUDA out of memory during training
+    cause: Model too large or batch size too big for GPU VRAM
+    fix: Reduce hidden_dims, use fewer layers, reduce batch size, or use gradient checkpointing
+
+  - error: SchNet/DimeNet requires 3D coordinates
+    cause: 3D models need atom positions, but dataset only has 2D graphs
+    fix: Use 2D models (GCN, GIN, GAT) or generate 3D conformers with RDKit
+
+  - error: Extremely slow training
+    cause: Model too deep/wide, or running on CPU instead of GPU
+    fix: Reduce model size, verify GPU is being used (check device), enable DataParallel
