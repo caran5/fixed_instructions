@@ -1,0 +1,92 @@
+name: fda_count_by_field
+description: |
+  Count/aggregate FDA data by a specific field.
+  Perform aggregation queries to get counts of records grouped by a field value.
+  Essential for statistical analysis, trend identification, and data summarization
+  across any FDA endpoint.
+  
+  Supports all FDA API endpoints (drug, device, food, animalandveterinary, other).
+  
+  Common count fields:
+  - drug/event: patient.reaction.reactionmeddrapt.exact (adverse reactions)
+  - drug/event: patient.drug.drugindication.exact (drug indications)
+  - device/event: event_type (Death, Injury, Malfunction)
+  - food/event: reactions.exact (adverse reactions)
+  - animalandveterinary/event: reaction.veddra_term_name.exact
+
+required_parameters:
+  - name: category
+    type: string
+    description: "API category (drug, device, food, animalandveterinary, other)"
+  - name: endpoint
+    type: string
+    description: "Specific endpoint (event, label, enforcement, etc.)"
+  - name: search
+    type: string
+    description: "Search query to filter records before counting"
+  - name: field
+    type: string
+    description: "Field to count/aggregate by (use .exact suffix for exact matching)"
+
+optional_parameters:
+  - name: exact
+    type: boolean
+    description: "Whether to use exact field matching (appends .exact)"
+    default: true
+  - name: api_key
+    type: string
+    description: "FDA API key for higher rate limits"
+
+hardware_requirements:
+  - "Internet connection required"
+  - "No GPU required"
+  - "Minimal RAM (< 1GB)"
+
+time_complexity: "O(1) - API response typically < 5 seconds"
+
+outputs:
+  - name: results
+    type: list
+    description: "Array of term/count pairs"
+  - name: term
+    type: string
+    description: "Field value"
+  - name: count
+    type: integer
+    description: "Number of records with this value"
+
+failure_modes:
+  - condition: "Invalid field name"
+    behavior: "Returns empty results or error"
+  - condition: "No matching records"
+    behavior: "Returns empty results array"
+
+example_usage: |
+  from scripts.fda_query import FDAQuery
+  
+  fda = FDAQuery(api_key="YOUR_API_KEY")
+  
+  # Count most common adverse reactions for aspirin
+  reactions = fda.count_by_field(
+      "drug", "event",
+      search="patient.drug.medicinalproduct:aspirin",
+      field="patient.reaction.reactionmeddrapt",
+      exact=True
+  )
+  
+  for item in reactions["results"][:10]:
+      print(f"{item['term']}: {item['count']:,}")
+  
+  # Count device events by type
+  event_types = fda.count_by_field(
+      "device", "event",
+      search="device.brand_name:*pacemaker*",
+      field="event_type"
+  )
+  
+  # Count food adverse events by industry
+  industries = fda.count_by_field(
+      "food", "event",
+      search="_exists_:report_number",
+      field="products.industry_name"
+  )

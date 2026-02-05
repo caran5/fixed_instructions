@@ -1,0 +1,91 @@
+name: fda_query_device_covid19_serology
+description: |
+  Query COVID-19 serological (antibody) test performance data from FDA.
+  Access evaluation data for COVID-19 antibody tests including sensitivity,
+  specificity, and cross-reactivity information. Part of FDA's effort to
+  provide transparency on COVID-19 diagnostic test performance.
+  
+  API Endpoint: https://api.fda.gov/device/covid19serology.json
+  
+  Key data fields returned:
+  - manufacturer: Test manufacturer
+  - device: Test device name
+  - sensitivity: Test sensitivity (true positive rate)
+  - specificity: Test specificity (true negative rate)
+  - ppv_at_prevalence_5pct: Positive predictive value at 5% prevalence
+  - npv_at_prevalence_5pct: Negative predictive value at 5% prevalence
+  - cross_reactivity: Cross-reactivity with other coronaviruses
+  - test_method: Testing methodology (ELISA, LFA, etc.)
+  - date_performed: Date of evaluation
+  - date_posted: Date posted to FDA website
+
+required_parameters: []
+
+optional_parameters:
+  - name: manufacturer
+    type: string
+    description: "Test manufacturer name"
+  - name: device_name
+    type: string
+    description: "Test device name"
+  - name: test_method
+    type: string
+    description: "Testing methodology (ELISA, LFA, CLIA, etc.)"
+  - name: min_sensitivity
+    type: float
+    description: "Minimum sensitivity threshold"
+  - name: min_specificity
+    type: float
+    description: "Minimum specificity threshold"
+  - name: limit
+    type: integer
+    description: "Maximum number of results to return"
+    default: 100
+  - name: api_key
+    type: string
+    description: "FDA API key for higher rate limits"
+
+hardware_requirements:
+  - "Internet connection required"
+  - "No GPU required"
+  - "Minimal RAM (< 1GB)"
+
+time_complexity: "O(1) - API response typically < 5 seconds"
+
+outputs:
+  - name: results
+    type: list
+    description: "Array of COVID-19 serology test records"
+  - name: sensitivity
+    type: float
+    description: "Test sensitivity percentage"
+  - name: specificity
+    type: float
+    description: "Test specificity percentage"
+
+failure_modes:
+  - condition: "No matching tests"
+    behavior: "Returns empty results"
+  - condition: "Invalid parameter value"
+    behavior: "No results returned"
+
+example_usage: |
+  from scripts.fda_query import FDAQuery
+  
+  fda = FDAQuery(api_key="YOUR_API_KEY")
+  
+  # Get all COVID-19 serology test data
+  serology_tests = fda.query("device", "covid19serology",
+                            limit=100)
+  
+  # Search by manufacturer
+  abbott_tests = fda.query("device", "covid19serology",
+                          search="manufacturer:*Abbott*")
+  
+  # Find high-performance tests
+  for test in serology_tests["results"]:
+      sensitivity = float(test.get("sensitivity", 0))
+      specificity = float(test.get("specificity", 0))
+      if sensitivity >= 95 and specificity >= 99:
+          print(f"{test['manufacturer']} - {test['device']}")
+          print(f"  Sens: {sensitivity}%, Spec: {specificity}%")

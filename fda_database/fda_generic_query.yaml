@@ -1,0 +1,121 @@
+name: fda_generic_query
+description: |
+  Generic query method for any FDA openFDA API endpoint.
+  Provides flexible access to all FDA data categories and endpoints with
+  full control over search parameters, pagination, sorting, and aggregation.
+  Use this for advanced queries not covered by specialized methods.
+  
+  API Categories and Endpoints:
+  
+  DRUG:
+  - event: Adverse events (FAERS)
+  - label: Product labeling (SPL)
+  - ndc: National Drug Code directory
+  - enforcement: Recall enforcement reports
+  - drugsfda: Drugs@FDA approval history
+  - drugshortages: Drug shortage information
+  
+  DEVICE:
+  - event: Adverse events (MAUDE)
+  - 510k: 510(k) clearances
+  - classification: Device classification
+  - enforcement: Recall enforcement reports
+  - recall: Detailed recall information
+  - pma: Premarket approval
+  - registrationlisting: Facility registrations
+  - udi: Unique Device Identification
+  - covid19serology: COVID-19 antibody test data
+  
+  FOOD:
+  - event: Food adverse events
+  - enforcement: Food recall reports
+  
+  ANIMALANDVETERINARY:
+  - event: Animal drug adverse events
+  
+  OTHER:
+  - substance: GSRS substance data
+
+required_parameters:
+  - name: category
+    type: string
+    description: "API category (drug, device, food, animalandveterinary, other)"
+  - name: endpoint
+    type: string
+    description: "Specific endpoint within the category"
+
+optional_parameters:
+  - name: search
+    type: string
+    description: "Search query string (openFDA query syntax)"
+  - name: limit
+    type: integer
+    description: "Maximum results to return (1-1000)"
+    default: 100
+  - name: skip
+    type: integer
+    description: "Number of results to skip (pagination)"
+    default: 0
+  - name: count
+    type: string
+    description: "Field to count/aggregate by"
+  - name: sort
+    type: string
+    description: "Sort field (e.g., 'receivedate:desc')"
+  - name: api_key
+    type: string
+    description: "FDA API key for higher rate limits"
+
+hardware_requirements:
+  - "Internet connection required"
+  - "No GPU required"
+  - "Minimal RAM (< 1GB)"
+
+time_complexity: "O(1) - API response typically < 10 seconds"
+
+outputs:
+  - name: results
+    type: list
+    description: "Array of matching records"
+  - name: meta
+    type: dict
+    description: "Metadata including total count, pagination info"
+
+failure_modes:
+  - condition: "Invalid category/endpoint"
+    behavior: "HTTP 404 error"
+  - condition: "Invalid search syntax"
+    behavior: "HTTP 400 error with message"
+  - condition: "Rate limit exceeded"
+    behavior: "HTTP 429 error"
+
+example_usage: |
+  from scripts.fda_query import FDAQuery
+  
+  fda = FDAQuery(api_key="YOUR_API_KEY")
+  
+  # Complex drug adverse event query
+  results = fda.query(
+      "drug", "event",
+      search="patient.drug.medicinalproduct:*aspirin*+AND+serious:1",
+      limit=100,
+      sort="receivedate:desc"
+  )
+  
+  # Device query with date range
+  devices = fda.query(
+      "device", "510k",
+      search="decision_date:[20240101+TO+20241231]+AND+device_class:3",
+      limit=50
+  )
+  
+  # Food recall with multiple conditions
+  recalls = fda.query(
+      "food", "enforcement",
+      search="classification:Class+I+AND+reason_for_recall:*listeria*",
+      sort="report_date:desc"
+  )
+  
+  # Pagination example
+  page1 = fda.query("drug", "event", search="...", limit=100, skip=0)
+  page2 = fda.query("drug", "event", search="...", limit=100, skip=100)

@@ -1,0 +1,101 @@
+name: fda_query_device_registration
+description: |
+  Query device registrations and listings from FDA.
+  Access information about manufacturing facilities, their registrations,
+  and the devices they list. Facilities that manufacture, prepare, propagate,
+  compound, or process medical devices must register with FDA annually.
+  
+  API Endpoint: https://api.fda.gov/device/registrationlisting.json
+  
+  Key data fields returned:
+  - registration.registration_number: Facility registration number
+  - registration.fei_number: Facility Establishment Identifier
+  - registration.status_code: Registration status
+  - registration.initial_importer_flag: Whether initial importer
+  - registration.reg_expiry_date_year: Registration expiration year
+  - registration.name: Facility name
+  - registration.address_line_1: Facility address
+  - registration.city: City
+  - registration.state_code: State
+  - registration.zip_code: ZIP code
+  - registration.iso_country_code: Country code
+  - products: Array of listed products
+  - products.product_code: FDA product code
+  - products.proprietary_name: Proprietary/brand names
+
+required_parameters: []
+
+optional_parameters:
+  - name: registration_number
+    type: string
+    description: "Facility registration number"
+  - name: fei_number
+    type: string
+    description: "Facility Establishment Identifier"
+  - name: facility_name
+    type: string
+    description: "Name of manufacturing facility"
+  - name: product_code
+    type: string
+    description: "FDA product code"
+  - name: state_code
+    type: string
+    description: "US state code (e.g., 'CA', 'NY')"
+  - name: country_code
+    type: string
+    description: "ISO country code"
+  - name: limit
+    type: integer
+    description: "Maximum number of results to return"
+    default: 100
+  - name: api_key
+    type: string
+    description: "FDA API key for higher rate limits"
+
+hardware_requirements:
+  - "Internet connection required"
+  - "No GPU required"
+  - "Minimal RAM (< 1GB)"
+
+time_complexity: "O(1) - API response typically < 5 seconds"
+
+outputs:
+  - name: results
+    type: list
+    description: "Array of registration/listing records"
+  - name: registration
+    type: dict
+    description: "Facility registration information"
+  - name: products
+    type: list
+    description: "Listed products at the facility"
+
+failure_modes:
+  - condition: "Facility not found"
+    behavior: "Returns empty results"
+  - condition: "Invalid registration number"
+    behavior: "No results returned"
+
+example_usage: |
+  from scripts.fda_query import FDAQuery
+  
+  fda = FDAQuery(api_key="YOUR_API_KEY")
+  
+  # Search by facility name
+  facilities = fda.query("device", "registrationlisting",
+                        search="registration.name:*Abbott*",
+                        limit=50)
+  
+  # Find facilities manufacturing specific device type
+  pump_makers = fda.query("device", "registrationlisting",
+                         search="products.product_code:LZG")
+  
+  # Get facilities in California
+  ca_facilities = fda.query("device", "registrationlisting",
+                           search="registration.state_code:CA",
+                           limit=100)
+  
+  # Check registration status
+  for result in facilities["results"]:
+      reg = result.get("registration", {})
+      print(f"{reg.get('name')}: Status {reg.get('status_code')}")

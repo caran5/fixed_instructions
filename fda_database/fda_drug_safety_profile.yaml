@@ -1,0 +1,102 @@
+name: fda_drug_safety_profile
+description: |
+  Generate a comprehensive drug safety profile by combining multiple FDA data sources.
+  This compound function aggregates adverse events, serious events, recalls, and
+  reaction statistics for a drug into a single safety assessment.
+  
+  Data sources combined:
+  - Drug adverse events (FAERS)
+  - Serious adverse events count
+  - Most common reactions
+  - Recent recalls
+  
+  Useful for pharmacovigilance, clinical decision support, drug comparison studies,
+  and regulatory submissions requiring safety summaries.
+
+required_parameters:
+  - name: drug_name
+    type: string
+    description: "Name of the drug to analyze"
+
+optional_parameters:
+  - name: limit
+    type: integer
+    description: "Maximum number of individual records to retrieve"
+    default: 100
+  - name: top_reactions
+    type: integer
+    description: "Number of top reactions to include"
+    default: 10
+  - name: api_key
+    type: string
+    description: "FDA API key for higher rate limits"
+
+hardware_requirements:
+  - "Internet connection required"
+  - "No GPU required"
+  - "Minimal RAM (< 2GB)"
+
+time_complexity: "O(1) - Multiple API calls, typically < 15 seconds total"
+
+outputs:
+  - name: total_events
+    type: integer
+    description: "Total number of adverse event reports"
+  - name: serious_events
+    type: integer
+    description: "Number of serious adverse event reports"
+  - name: top_reactions
+    type: list
+    description: "Array of most common adverse reactions with counts"
+  - name: recalls
+    type: list
+    description: "Array of recall records for the drug"
+  - name: death_events
+    type: integer
+    description: "Number of events resulting in death (if available)"
+
+failure_modes:
+  - condition: "Drug not found"
+    behavior: "Returns zeros for counts, empty arrays"
+  - condition: "One API call fails"
+    behavior: "Partial results returned with error indication"
+
+example_usage: |
+  from scripts.fda_query import FDAQuery
+  
+  fda = FDAQuery(api_key="YOUR_API_KEY")
+  
+  def drug_safety_profile(fda, drug_name):
+      """Generate complete safety profile."""
+      
+      # 1. Total adverse events
+      events = fda.query_drug_events(drug_name, limit=1)
+      total = events.get("meta", {}).get("results", {}).get("total", 0)
+      
+      # 2. Most common reactions
+      reactions = fda.count_by_field(
+          "drug", "event",
+          search=f"patient.drug.medicinalproduct:*{drug_name}*",
+          field="patient.reaction.reactionmeddrapt",
+          exact=True
+      )
+      
+      # 3. Serious events
+      serious = fda.query("drug", "event",
+          search=f"patient.drug.medicinalproduct:*{drug_name}*+AND+serious:1",
+          limit=1)
+      
+      # 4. Recent recalls
+      recalls = fda.query_drug_recalls(drug_name=drug_name)
+      
+      return {
+          "total_events": total,
+          "top_reactions": reactions.get("results", [])[:10],
+          "serious_events": serious.get("meta", {}).get("results", {}).get("total", 0),
+          "recalls": recalls.get("results", [])
+      }
+  
+  # Generate safety profile
+  profile = drug_safety_profile(fda, "aspirin")
+  print(f"Total adverse events: {profile['total_events']:,}")
+  print(f"Serious events: {profile['serious_events']:,}")

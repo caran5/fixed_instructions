@@ -1,0 +1,98 @@
+name: fda_query_device_510k
+description: |
+  Query 510(k) premarket notification clearances from FDA.
+  Access information about medical devices cleared through the 510(k) pathway,
+  which demonstrates substantial equivalence to a legally marketed device.
+  Useful for regulatory research, competitive analysis, and device approval tracking.
+  
+  API Endpoint: https://api.fda.gov/device/510k.json
+  
+  Key data fields returned:
+  - k_number: 510(k) clearance number
+  - device_name: Name of the device
+  - applicant: Company that submitted the 510(k)
+  - decision_date: Date of FDA decision
+  - decision_description: Clearance decision (SESE, SESP, etc.)
+  - clearance_type: Type of clearance (Traditional, Special, Abbreviated)
+  - device_class: Device class (1, 2, or 3)
+  - product_code: FDA product code
+  - statement_or_summary: Indication for use statement
+  - openfda.device_name: Standardized device name
+  - openfda.medical_specialty_description: Medical specialty
+
+required_parameters: []
+
+optional_parameters:
+  - name: applicant
+    type: string
+    description: "Company name to search for 510(k) clearances"
+  - name: device_name
+    type: string
+    description: "Device name to search for"
+  - name: product_code
+    type: string
+    description: "FDA product code"
+  - name: k_number
+    type: string
+    description: "Specific 510(k) number to look up"
+  - name: device_class
+    type: integer
+    description: "Filter by device class (1, 2, or 3)"
+  - name: decision_date_start
+    type: string
+    description: "Start date for decision date range (YYYYMMDD)"
+  - name: decision_date_end
+    type: string
+    description: "End date for decision date range (YYYYMMDD)"
+  - name: limit
+    type: integer
+    description: "Maximum number of results to return"
+    default: 100
+  - name: api_key
+    type: string
+    description: "FDA API key for higher rate limits"
+
+hardware_requirements:
+  - "Internet connection required"
+  - "No GPU required"
+  - "Minimal RAM (< 1GB)"
+
+time_complexity: "O(1) - API response typically < 5 seconds"
+
+outputs:
+  - name: results
+    type: list
+    description: "Array of 510(k) clearance records"
+  - name: k_number
+    type: string
+    description: "510(k) clearance number"
+  - name: decision_description
+    type: string
+    description: "FDA clearance decision"
+
+failure_modes:
+  - condition: "No matching clearances"
+    behavior: "Returns empty results array"
+  - condition: "Invalid k_number format"
+    behavior: "No results returned"
+
+example_usage: |
+  from scripts.fda_query import FDAQuery
+  
+  fda = FDAQuery(api_key="YOUR_API_KEY")
+  
+  # Search by applicant
+  clearances = fda.query_device_510k(applicant="Medtronic")
+  
+  # Search by device name
+  robots = fda.query_device_510k(device_name="surgical robot")
+  
+  # Search by date range
+  recent = fda.query("device", "510k",
+                    search="decision_date:[20240101+TO+20241231]",
+                    limit=100)
+  
+  # Get Class III clearances
+  class3 = fda.query("device", "510k",
+                    search="device_class:3",
+                    limit=100)

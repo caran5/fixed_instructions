@@ -1,0 +1,115 @@
+name: fda_query_animal_events
+description: |
+  Query animal drug adverse events from FDA's Center for Veterinary Medicine (CVM).
+  Access reports of side effects, product use errors, product quality problems,
+  and therapeutic failures associated with animal drugs. Essential for veterinary
+  pharmacovigilance, species-specific safety research, and breed predisposition studies.
+  
+  API Endpoint: https://api.fda.gov/animalandveterinary/event.json
+  
+  Key data fields returned:
+  - unique_aer_id_number: Unique adverse event report identifier
+  - report_id: Report ID number
+  - receiver.organization: Organization receiving report
+  - primary_reporter: Primary reporter type (veterinarian, owner)
+  - onset_date: Date adverse event began
+  - animal.species: Animal species affected
+  - animal.breed.breed_component: Animal breed
+  - animal.age.min: Animal age
+  - animal.weight.min: Animal weight
+  - drug.brand_name: Drug brand name
+  - drug.manufacturer.name: Drug manufacturer
+  - drug.administered_by: Who administered drug
+  - drug.route: Route of administration
+  - drug.active_ingredients.name: Active ingredient names
+  - reaction.veddra_term_name: VeDDRA reaction term name
+  - outcome.medical_status: Medical outcome (Died, Recovered, etc.)
+  - serious_ae: Whether serious adverse event
+
+required_parameters: []
+
+optional_parameters:
+  - name: species
+    type: string
+    description: "Animal species (Dog, Cat, Horse, Cattle, etc.)"
+  - name: drug_name
+    type: string
+    description: "Drug brand name or active ingredient"
+  - name: breed
+    type: string
+    description: "Animal breed"
+  - name: reaction
+    type: string
+    description: "Reaction term (VeDDRA term)"
+  - name: serious_only
+    type: boolean
+    description: "Filter for only serious adverse events"
+    default: false
+  - name: outcome
+    type: string
+    description: "Medical outcome (Died, Recovered, Unknown)"
+  - name: limit
+    type: integer
+    description: "Maximum number of results to return"
+    default: 100
+  - name: sort
+    type: string
+    description: "Sort field (e.g., 'onset_date:desc')"
+  - name: api_key
+    type: string
+    description: "FDA API key for higher rate limits"
+
+hardware_requirements:
+  - "Internet connection required"
+  - "No GPU required"
+  - "Minimal RAM (< 1GB)"
+
+time_complexity: "O(1) - API response typically < 5 seconds"
+
+outputs:
+  - name: results
+    type: list
+    description: "Array of animal drug adverse event reports"
+  - name: animal
+    type: dict
+    description: "Animal information (species, breed, age, weight)"
+  - name: reaction
+    type: list
+    description: "Array of adverse reactions (VeDDRA terms)"
+
+failure_modes:
+  - condition: "No matching events"
+    behavior: "Returns empty results"
+  - condition: "Invalid species name"
+    behavior: "No results returned"
+
+example_usage: |
+  from scripts.fda_query import FDAQuery
+  
+  fda = FDAQuery(api_key="YOUR_API_KEY")
+  
+  # Query adverse events in dogs
+  dog_events = fda.query_animal_events(species="Dog")
+  
+  # Search for specific drug adverse events
+  flea_events = fda.query_animal_events(
+      species="Dog",
+      drug_name="flea collar"
+  )
+  
+  # Find serious adverse events
+  serious = fda.query("animalandveterinary", "event",
+                     search="serious_ae:true+AND+outcome.medical_status:Died",
+                     limit=50)
+  
+  # Breed predisposition analysis
+  labrador_seizures = fda.query("animalandveterinary", "event",
+      search="reaction.veddra_term_name:*seizure*+AND+"
+             "animal.breed.breed_component:*Labrador*")
+  
+  # Count most common reactions by species
+  counts = fda.count_by_field(
+      "animalandveterinary", "event",
+      search="animal.species:Cat",
+      field="reaction.veddra_term_name.exact"
+  )

@@ -1,0 +1,91 @@
+name: fda_query_device_events
+description: |
+  Query medical device adverse events from the MAUDE (Manufacturer and User
+  Facility Device Experience) database. Access reports of device malfunctions,
+  injuries, deaths, and other undesirable effects. Essential for post-market
+  surveillance, safety signal detection, and device comparison studies.
+  
+  API Endpoint: https://api.fda.gov/device/event.json
+  
+  Key data fields returned:
+  - device.brand_name: Brand name of device
+  - device.generic_name: Generic device name
+  - device.manufacturer_d_name: Manufacturer name
+  - device.device_class: Device class (1, 2, or 3)
+  - event_type: Type of event (Death, Injury, Malfunction, Other)
+  - date_received: Date FDA received report
+  - mdr_report_key: Unique report identifier
+  - adverse_event_flag: Whether reported as adverse event
+  - product_problem_flag: Whether product problem reported
+  - patient.patient_problems: Patient problems/complications
+  - remedial_action: Actions taken (recall, repair, replace, etc.)
+
+required_parameters:
+  - name: device_name
+    type: string
+    description: "Name of device to search for adverse events"
+
+optional_parameters:
+  - name: limit
+    type: integer
+    description: "Maximum number of results to return (1-1000)"
+    default: 100
+  - name: event_type
+    type: string
+    description: "Filter by event type (Death, Injury, Malfunction, Other)"
+  - name: device_class
+    type: integer
+    description: "Filter by device class (1, 2, or 3)"
+  - name: count_field
+    type: string
+    description: "Field to count/aggregate by"
+  - name: sort
+    type: string
+    description: "Sort field (e.g., 'date_received:desc')"
+  - name: api_key
+    type: string
+    description: "FDA API key for higher rate limits"
+
+hardware_requirements:
+  - "Internet connection required"
+  - "No GPU required"
+  - "Minimal RAM (< 1GB)"
+
+time_complexity: "O(1) - API response typically < 5 seconds"
+
+outputs:
+  - name: results
+    type: list
+    description: "Array of device adverse event reports"
+  - name: event_type
+    type: string
+    description: "Type of adverse event (Death, Injury, Malfunction)"
+  - name: device
+    type: dict
+    description: "Device information including brand, manufacturer, class"
+
+failure_modes:
+  - condition: "Device not found"
+    behavior: "Returns empty results array"
+  - condition: "API rate limit exceeded"
+    behavior: "HTTP 429 error"
+
+example_usage: |
+  from scripts.fda_query import FDAQuery
+  
+  fda = FDAQuery(api_key="YOUR_API_KEY")
+  
+  # Query adverse events for pacemakers
+  events = fda.query_device_events("pacemaker", limit=100)
+  
+  # Count events by type
+  counts = fda.count_by_field(
+      "device", "event",
+      search="device.generic_name:insulin+pump",
+      field="event_type"
+  )
+  
+  # Find death events for Class III devices
+  deaths = fda.query("device", "event",
+                    search="event_type:Death+AND+device.device_class:3",
+                    limit=50)

@@ -1,0 +1,88 @@
+name: fda_query_drug_recalls
+description: |
+  Query drug recall enforcement reports from FDA.
+  Access information about drug recalls and enforcement actions including
+  recall classification, reason for recall, distribution patterns, and status.
+  
+  Recall Classifications:
+  - Class I: Dangerous or defective products that could cause serious health problems or death
+  - Class II: Products that might cause temporary health problems or pose slight threat
+  - Class III: Products unlikely to cause adverse health reaction but violate FDA regulations
+  
+  API Endpoint: https://api.fda.gov/drug/enforcement.json
+  
+  Key data fields returned:
+  - recall_number: Unique recall identifier
+  - classification: Recall class (I, II, or III)
+  - reason_for_recall: Description of the issue
+  - product_description: Description of recalled product
+  - recalling_firm: Company issuing the recall
+  - status: Recall status (Ongoing, Completed, Terminated)
+  - distribution_pattern: Geographic distribution of product
+  - voluntary_mandated: Whether recall was voluntary or mandated
+
+required_parameters: []
+
+optional_parameters:
+  - name: drug_name
+    type: string
+    description: "Name of drug to search for recalls"
+  - name: classification
+    type: string
+    description: "Recall class to filter by (I, II, or III)"
+  - name: status
+    type: string
+    description: "Recall status filter (Ongoing, Completed, Terminated)"
+  - name: limit
+    type: integer
+    description: "Maximum number of results to return"
+    default: 100
+  - name: sort
+    type: string
+    description: "Sort field (e.g., 'report_date:desc')"
+    default: "report_date:desc"
+  - name: api_key
+    type: string
+    description: "FDA API key for higher rate limits"
+
+hardware_requirements:
+  - "Internet connection required"
+  - "No GPU required"
+  - "Minimal RAM (< 1GB)"
+
+time_complexity: "O(1) - API response typically < 5 seconds"
+
+outputs:
+  - name: results
+    type: list
+    description: "Array of recall enforcement reports"
+  - name: classification
+    type: string
+    description: "Recall severity classification"
+  - name: reason_for_recall
+    type: string
+    description: "Detailed reason for the recall"
+
+failure_modes:
+  - condition: "No matching recalls"
+    behavior: "Returns empty results array"
+  - condition: "Invalid classification value"
+    behavior: "No results returned"
+
+example_usage: |
+  from scripts.fda_query import FDAQuery
+  
+  fda = FDAQuery(api_key="YOUR_API_KEY")
+  
+  # Search for metformin recalls
+  recalls = fda.query_drug_recalls(drug_name="metformin")
+  
+  # Get all Class I (most serious) recalls
+  serious_recalls = fda.query_drug_recalls(classification="I")
+  
+  # Get ongoing recalls
+  ongoing = fda.query_drug_recalls(status="Ongoing")
+  
+  # Process results
+  for recall in recalls["results"]:
+      print(f"{recall['classification']}: {recall['reason_for_recall']}")

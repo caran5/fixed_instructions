@@ -1,0 +1,83 @@
+name: fda_query_drug_events
+description: |
+  Query drug adverse events from the FDA Adverse Event Reporting System (FAERS).
+  Access reports of drug side effects, product use errors, product quality problems,
+  and therapeutic failures submitted to the FDA. Useful for safety signal detection,
+  post-market surveillance, drug interaction analysis, and comparative safety research.
+  
+  API Endpoint: https://api.fda.gov/drug/event.json
+  
+  Key data fields returned:
+  - patient.drug.medicinalproduct: Drug name
+  - patient.drug.drugindication: Reason for taking the drug
+  - patient.reaction.reactionmeddrapt: Adverse reaction description (MedDRA terms)
+  - receivedate: Date report was received
+  - serious: Whether the event was serious (1=serious, 2=not serious)
+  - seriousnessdeath: Whether the event resulted in death
+  - primarysource.qualification: Reporter qualification (physician, pharmacist, etc.)
+
+required_parameters:
+  - name: drug_name
+    type: string
+    description: "Name of the drug to search for adverse events (can include wildcards)"
+
+optional_parameters:
+  - name: limit
+    type: integer
+    description: "Maximum number of results to return (1-1000)"
+    default: 100
+  - name: skip
+    type: integer
+    description: "Number of results to skip for pagination"
+    default: 0
+  - name: serious_only
+    type: boolean
+    description: "Filter for only serious adverse events"
+    default: false
+  - name: count_field
+    type: string
+    description: "Field to count/aggregate by (e.g., 'patient.reaction.reactionmeddrapt.exact')"
+  - name: sort
+    type: string
+    description: "Field to sort by (e.g., 'receivedate:desc')"
+  - name: api_key
+    type: string
+    description: "FDA API key for higher rate limits (optional but recommended)"
+
+hardware_requirements:
+  - "Internet connection required"
+  - "No GPU required"
+  - "Minimal RAM (< 1GB)"
+
+time_complexity: "O(1) - API response typically < 5 seconds"
+
+outputs:
+  - name: results
+    type: list
+    description: "Array of adverse event reports matching the search criteria"
+  - name: meta
+    type: dict
+    description: "Metadata including total results count, pagination info"
+
+failure_modes:
+  - condition: "Invalid drug name"
+    behavior: "Returns empty results array"
+  - condition: "API rate limit exceeded"
+    behavior: "HTTP 429 error - use API key or reduce request frequency"
+  - condition: "Network timeout"
+    behavior: "Request timeout after 30 seconds"
+
+example_usage: |
+  from scripts.fda_query import FDAQuery
+  
+  fda = FDAQuery(api_key="YOUR_API_KEY")
+  
+  # Query adverse events for aspirin
+  events = fda.query_drug_events("aspirin", limit=100)
+  
+  # Count most common reactions
+  counts = fda.count_by_field(
+      "drug", "event",
+      search="patient.drug.medicinalproduct:metformin",
+      field="patient.reaction.reactionmeddrapt.exact"
+  )

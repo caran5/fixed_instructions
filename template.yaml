@@ -1,0 +1,65 @@
+name: <tool_name_snake_case>
+
+description: >
+  <2–4 sentence high-level explanation of what the tool does.
+  Clearly state input → processing → output.
+  Mention underlying library/CLI/model and key assumptions
+  (e.g., strand scanning, circular DNA, etc.).>
+
+required_parameters:
+  - name: <parameter_name>
+    type: <str | int | bool | float | list | dict>
+    default: null
+    description: >
+      <What the parameter represents.
+      Include expected format (e.g., raw string vs FASTA),
+      units (nt vs aa),
+      allowed ranges,
+      and validation constraints.>
+
+optional_parameters:
+  - name: <parameter_name>
+    type: <str | int | bool | float | list | dict>
+    default: <actual_default_value>
+    description: >
+      <What changes when enabled/disabled.
+      Mention performance, memory, or runtime impact if applicable.>
+
+hardware_requirements:
+  device: <cpu_only | gpu_optional | gpu_required>
+  notes: >
+    <Any additional requirements such as RAM needs,
+    external binaries, PATH setup, or storage considerations.>
+
+time_complexity:
+  assumptions: >
+    <Describe benchmarking conditions:
+    hardware used, CPU/GPU model,
+    input size,
+    number of threads,
+    cold-start vs warm-start behavior.>
+  latency_seconds:
+    n1: null    # 1 run
+    n2: null    # 2 runs
+    n10: null   # 10 runs
+
+outputs:
+  type: <list | dict | dataframe | json | file_path>
+  schema: >
+    <Describe fields, keys, and structure of the output.>
+  format: >
+    <Units, encoding, coordinate system, or file format.>
+  example: >
+    <Minimal example output.>
+
+failure_modes:
+  - error: <error_condition>
+    cause: <likely_cause>
+    fix: <recommended_fix>
+
+dependencies:
+  requirements_file: requirements_<tool_name>.txt
+  description: >
+    <List external libraries, binaries, or models.
+    Include versions, installation method,
+    and whether each is a system binary or Python package.>

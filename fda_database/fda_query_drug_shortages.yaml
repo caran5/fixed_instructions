@@ -1,0 +1,86 @@
+name: fda_query_drug_shortages
+description: |
+  Query the FDA Drug Shortages database for current and resolved supply issues.
+  Access information about drugs in shortage, reasons for shortage, resolution
+  dates, and alternative therapies. Essential for formulary management, supply
+  chain planning, and patient care continuity.
+  
+  API Endpoint: https://api.fda.gov/drug/drugshortages.json
+  
+  Key data fields returned:
+  - product_name: Name of drug in shortage
+  - status: Current status (Currently in Shortage, Resolved, Discontinued)
+  - reason: Reason for shortage
+  - shortage_start_date: When shortage began
+  - resolution_date: When shortage was resolved (if applicable)
+  - discontinuation_date: If product was discontinued
+  - active_ingredient: Active ingredients
+  - marketed_by: Companies marketing the product
+  - presentation: Dosage form and strength
+
+required_parameters: []
+
+optional_parameters:
+  - name: product_name
+    type: string
+    description: "Name of drug to search for shortage status"
+  - name: status
+    type: string
+    description: "Filter by status (Currently in Shortage, Resolved, Discontinued)"
+  - name: active_ingredient
+    type: string
+    description: "Search by active ingredient"
+  - name: limit
+    type: integer
+    description: "Maximum number of results to return"
+    default: 100
+  - name: api_key
+    type: string
+    description: "FDA API key for higher rate limits"
+
+hardware_requirements:
+  - "Internet connection required"
+  - "No GPU required"
+  - "Minimal RAM (< 1GB)"
+
+time_complexity: "O(1) - API response typically < 5 seconds"
+
+outputs:
+  - name: results
+    type: list
+    description: "Array of drug shortage records"
+  - name: status
+    type: string
+    description: "Current shortage status"
+  - name: reason
+    type: string
+    description: "Reason for the shortage"
+
+failure_modes:
+  - condition: "No matching shortages"
+    behavior: "Returns empty results"
+  - condition: "Drug not tracked"
+    behavior: "No results returned"
+
+example_usage: |
+  from scripts.fda_query import FDAQuery
+  
+  fda = FDAQuery(api_key="YOUR_API_KEY")
+  
+  # Find current drug shortages
+  shortages = fda.query("drug", "drugshortages",
+                       search="status:Currently+in+Shortage",
+                       limit=100)
+  
+  # Search for specific drug shortage
+  amox_shortage = fda.query("drug", "drugshortages",
+                           search="product_name:*amoxicillin*")
+  
+  # Get shortage history by ingredient
+  epi_history = fda.query("drug", "drugshortages",
+                         search="active_ingredient:epinephrine")
+  
+  # Check shortage status
+  for shortage in shortages["results"]:
+      print(f"{shortage['product_name']}: {shortage['status']}")
+      print(f"  Reason: {shortage.get('reason', 'N/A')}")

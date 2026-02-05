@@ -1,0 +1,84 @@
+name: fda_query_substance_by_name
+description: |
+  Query FDA substance data by substance name.
+  Search for chemical and biological substances by name to find UNII codes,
+  CAS numbers, and other identifiers. Useful for cross-referencing substances
+  across regulatory databases.
+  
+  API Endpoint: https://api.fda.gov/other/substance.json
+  
+  Key data fields returned:
+  - approvalID: UNII code
+  - names: Array of substance names (display_name, name, type)
+  - codes: Array of identifier codes (CAS numbers, etc.)
+  - relationships: Related substances
+  - moieties: Chemical moieties
+  - structure: Chemical structure information
+  - molecularFormula: Molecular formula
+  - definitionType: Substance definition type
+  - substanceClass: Substance classification
+
+required_parameters:
+  - name: name
+    type: string
+    description: "Substance name to search for"
+
+optional_parameters:
+  - name: exact_match
+    type: boolean
+    description: "Require exact name match"
+    default: false
+  - name: limit
+    type: integer
+    description: "Maximum number of results to return"
+    default: 10
+  - name: api_key
+    type: string
+    description: "FDA API key for higher rate limits"
+
+hardware_requirements:
+  - "Internet connection required"
+  - "No GPU required"
+  - "Minimal RAM (< 1GB)"
+
+time_complexity: "O(1) - API response typically < 5 seconds"
+
+outputs:
+  - name: results
+    type: list
+    description: "Array of substance records matching search"
+  - name: approvalID
+    type: string
+    description: "UNII code"
+  - name: codes
+    type: list
+    description: "Array of identifier codes (CAS, etc.)"
+
+failure_modes:
+  - condition: "Substance not found"
+    behavior: "Returns empty results"
+  - condition: "Ambiguous name"
+    behavior: "Returns multiple results - may need refinement"
+
+example_usage: |
+  from scripts.fda_query import FDAQuery
+  
+  fda = FDAQuery(api_key="YOUR_API_KEY")
+  
+  # Search for substance by name
+  substance = fda.query_substance_by_name("ibuprofen")
+  
+  # Get UNII and CAS number
+  if "results" in substance:
+      sub = substance["results"][0]
+      unii = sub['approvalID']
+      
+      # Find CAS number
+      cas = None
+      for code in sub.get('codes', []):
+          if code.get('codeSystem') == 'CAS':
+              cas = code.get('code')
+              break
+      
+      print(f"UNII: {unii}")
+      print(f"CAS: {cas}")

@@ -1,0 +1,87 @@
+name: fda_query_device_recall
+description: |
+  Query detailed device recall information from FDA.
+  Access comprehensive recall data including root cause analysis, associated
+  regulatory submissions (510(k), PMA), and recall event numbers.
+  Differs from enforcement reports by providing more detailed technical information.
+  
+  API Endpoint: https://api.fda.gov/device/recall.json
+  
+  Key data fields returned:
+  - res_event_number: Recall event number
+  - product_code: FDA product code
+  - openfda.device_name: Device name
+  - openfda.device_class: Device class
+  - product_res_number: Product recall number
+  - firm_fei_number: Firm establishment identifier
+  - k_numbers: Associated 510(k) numbers
+  - pma_numbers: Associated PMA numbers
+  - root_cause_description: Root cause of the issue
+  - event_date_initiated: Date recall was initiated
+  - event_date_terminated: Date recall was terminated
+
+required_parameters: []
+
+optional_parameters:
+  - name: product_code
+    type: string
+    description: "FDA product code to search"
+  - name: device_name
+    type: string
+    description: "Device name to search"
+  - name: k_number
+    type: string
+    description: "Associated 510(k) number"
+  - name: pma_number
+    type: string
+    description: "Associated PMA number"
+  - name: limit
+    type: integer
+    description: "Maximum number of results to return"
+    default: 100
+  - name: api_key
+    type: string
+    description: "FDA API key for higher rate limits"
+
+hardware_requirements:
+  - "Internet connection required"
+  - "No GPU required"
+  - "Minimal RAM (< 1GB)"
+
+time_complexity: "O(1) - API response typically < 5 seconds"
+
+outputs:
+  - name: results
+    type: list
+    description: "Array of detailed recall records"
+  - name: root_cause_description
+    type: string
+    description: "Root cause analysis of the recall"
+  - name: k_numbers
+    type: list
+    description: "Associated 510(k) clearance numbers"
+
+failure_modes:
+  - condition: "No matching recalls"
+    behavior: "Returns empty results"
+  - condition: "Invalid product code"
+    behavior: "No results returned"
+
+example_usage: |
+  from scripts.fda_query import FDAQuery
+  
+  fda = FDAQuery(api_key="YOUR_API_KEY")
+  
+  # Search recalls by product code
+  recalls = fda.query("device", "recall",
+                     search="product_code:DQY",
+                     limit=50)
+  
+  # Find recalls with specific 510(k) association
+  k_recalls = fda.query("device", "recall",
+                       search="k_numbers:K123456")
+  
+  # Analyze root causes
+  for recall in recalls["results"]:
+      print(f"Device: {recall.get('openfda', {}).get('device_name')}")
+      print(f"Root Cause: {recall.get('root_cause_description')}")

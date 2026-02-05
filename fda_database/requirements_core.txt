@@ -1,0 +1,4 @@
+# FDA Database Core Requirements
+# For all FDA openFDA API queries
+
+requests>=2.28.0
